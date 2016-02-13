@@ -153,7 +153,7 @@ void LiquidTWI2::begin(uint8_t cols, uint8_t lines, uint8_t dotsize) {
     // now set up input/output pins
     Wire.beginTransmission(MCP23017_ADDRESS | _i2cAddr);
     wiresend(MCP23017_IODIRA);
-    wiresend(0x1F); // buttons input, all others output
+    wiresend(0x0F); // buttons input, all others output
     result = Wire.endTransmission();
 #ifdef DETECT_DEVICE
     if (result) {
@@ -167,7 +167,7 @@ void LiquidTWI2::begin(uint8_t cols, uint8_t lines, uint8_t dotsize) {
     // set the button pullups
     Wire.beginTransmission(MCP23017_ADDRESS | _i2cAddr);
     wiresend(MCP23017_GPPUA);
-    wiresend(0x1F);	
+    wiresend(0x0F);	
     result = Wire.endTransmission();
 #ifdef DETECT_DEVICE
     if (result) {
@@ -176,8 +176,92 @@ void LiquidTWI2::begin(uint8_t cols, uint8_t lines, uint8_t dotsize) {
           return;
         }
     }
-#endif 
-    
+#endif
+
+    // now set up input/output pins
+    Wire.beginTransmission(MCP23017_ADDRESS | _i2cAddr);
+    wiresend(MCP23017_GPIOA);
+    wiresend(0x00); // buttons input, all others output
+    result = Wire.endTransmission();
+#ifdef DETECT_DEVICE
+    if (result) {
+        if (_deviceDetected == 2) {
+          _deviceDetected = 0;
+          return;
+        }
+    }
+#endif
+
+    // set button input polarity
+    Wire.beginTransmission(MCP23017_ADDRESS | _i2cAddr);
+    wiresend(MCP23017_IPOLA);
+    wiresend(0x0F);	
+    result = Wire.endTransmission();
+#ifdef DETECT_DEVICE
+    if (result) {
+        if (_deviceDetected == 2) {
+          _deviceDetected = 0;
+          return;
+        }
+    }
+#endif
+
+    // set button input polarity
+    Wire.beginTransmission(MCP23017_ADDRESS | _i2cAddr);
+    wiresend(MCP23017_GPINTENA);
+    wiresend(0x0F);	
+    result = Wire.endTransmission();
+#ifdef DETECT_DEVICE
+    if (result) {
+        if (_deviceDetected == 2) {
+          _deviceDetected = 0;
+          return;
+        }
+    }
+#endif
+
+    // set button input polarity
+    Wire.beginTransmission(MCP23017_ADDRESS | _i2cAddr);
+    wiresend(MCP23017_INTCONA);
+    wiresend(0x00);	
+    result = Wire.endTransmission();
+#ifdef DETECT_DEVICE
+    if (result) {
+        if (_deviceDetected == 2) {
+          _deviceDetected = 0;
+          return;
+        }
+    }
+#endif
+
+    // set button input polarity
+    Wire.beginTransmission(MCP23017_ADDRESS | _i2cAddr);
+    wiresend(MCP23017_GPPUA);
+    wiresend(0x0F);	
+    result = Wire.endTransmission();
+#ifdef DETECT_DEVICE
+    if (result) {
+        if (_deviceDetected == 2) {
+          _deviceDetected = 0;
+          return;
+        }
+    }
+#endif
+
+    // set button input polarity
+    Wire.beginTransmission(MCP23017_ADDRESS | _i2cAddr);
+    wiresend(MCP23017_INTFA);
+    wiresend(0x0F);	
+    result = Wire.endTransmission();
+#ifdef DETECT_DEVICE
+    if (result) {
+        if (_deviceDetected == 2) {
+          _deviceDetected = 0;
+          return;
+        }
+    }
+#endif
+
     Wire.beginTransmission(MCP23017_ADDRESS | _i2cAddr);
     wiresend(MCP23017_IODIRB);
     wiresend(0x00); // all pins output
@@ -189,8 +273,28 @@ void LiquidTWI2::begin(uint8_t cols, uint8_t lines, uint8_t dotsize) {
           return;
         }
     }
+#endif
+
+    Wire.beginTransmission(MCP23017_ADDRESS | _i2cAddr);
+    wiresend(MCP23017_GPIOB);
+    wiresend(0x00); // all pins output
+    result = Wire.endTransmission();
+#ifdef DETECT_DEVICE
+    if (result) {
+        if (_deviceDetected == 2) {
+          _deviceDetected = 0;
+          return;
+        }
+    }
 #endif 
 #endif // MCP23017
+
+
+
+
+
+
+
 #if defined(MCP23017)&&defined(MCP23008)
   }
   else { // MCP23008
@@ -492,7 +596,7 @@ uint8_t LiquidTWI2::readButtons(void) {
   Wire.endTransmission();
   
   Wire.requestFrom(MCP23017_ADDRESS | _i2cAddr, 1);
-  return ~wirerecv() & ALL_BUTTON_BITS;
+  return ~wirerecv() & 0b1111;
 }
 #endif // MCP23017
 
@@ -616,7 +720,7 @@ void LiquidTWI2::burstBits16(uint16_t value) {
   // we use this to burst bits to the GPIO chip whenever we need to. avoids repetitive code.
   Wire.beginTransmission(MCP23017_ADDRESS | _i2cAddr);
   wiresend(MCP23017_GPIOA);
-  wiresend(value & 0xFF); // send A bits
+  //wiresend(value & 0x0F); // send A bits
   wiresend(value >> 8);   // send B bits
   while(Wire.endTransmission());
 }
@@ -665,6 +769,21 @@ void LiquidTWI2::setRegister(uint8_t reg, uint8_t value) {
     Wire.beginTransmission(MCP23017_ADDRESS | _i2cAddr);
     wiresend(reg);
     wiresend(value);
+    Wire.endTransmission();
+}
+
+//set registers
+void LiquidTWI2::setLed(uint8_t button, uint8_t value) {
+    button += 3;
+    uint8_t portA = readRegister(MCP23017_GPIOA);
+    Wire.beginTransmission(MCP23017_ADDRESS | _i2cAddr);
+    wiresend(MCP23017_GPIOA);
+    if(value == 0){
+        wiresend(portA & ~(1 << button));
+    }else if(value == 1){
+        wiresend(portA | (1 << button));
+    }
+    
     Wire.endTransmission();
 }
 
